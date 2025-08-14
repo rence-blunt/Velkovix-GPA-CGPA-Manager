@@ -2,11 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Velkovix GPA & CGPA Manager</title>
-<!-- PWA Manifest -->
+<title>Velkovix Quick GPA & CGPA Manager</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2563eb">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3b82f6">
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+}
+</script>
 <style>
 body {
     font-family: Arial, sans-serif;
@@ -14,7 +17,6 @@ body {
     background: #f7f9fc;
     color: #333;
 }
-
 nav {
     position: fixed;
     top: 0;
@@ -29,17 +31,14 @@ nav {
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 1000;
 }
-
 h1, h2 {
     text-align: center;
 }
-
 main {
     padding: 90px 20px 20px 20px;
-    max-width: 1000px;
+    max-width: 800px;
     margin: auto;
 }
-
 button {
     padding: 8px 14px;
     margin: 5px;
@@ -54,14 +53,12 @@ button {
 button:hover {
     background: #2563eb;
 }
-
-input, select {
+input {
     padding: 6px;
     margin: 5px;
     border: 1px solid #ccc;
     border-radius: 6px;
 }
-
 table {
     border-collapse: collapse;
     width: 100%;
@@ -71,18 +68,15 @@ table {
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
-
 th, td {
     border-bottom: 1px solid #eee;
     padding: 10px;
     text-align: center;
 }
-
 th {
     background: #f4f6fa;
     font-weight: bold;
 }
-
 .delete-btn {
     cursor: pointer;
     color: red;
@@ -92,7 +86,6 @@ th {
 .delete-btn:hover {
     color: darkred;
 }
-
 .semester {
     border: 2px solid #e5e7eb;
     padding: 15px;
@@ -101,7 +94,6 @@ th {
     border-radius: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
-
 .semester-header {
     display: flex;
     justify-content: space-between;
@@ -109,23 +101,19 @@ th {
     flex-wrap: wrap;
     margin-bottom: 10px;
 }
-
 .hidden {
     display: none;
 }
-
 #authScreen {
     background: white;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
 #authScreen input {
     width: 80%;
     margin: 10px auto;
 }
-
 #authScreen button {
     margin-top: 10px;
     width: 85%;
@@ -137,12 +125,12 @@ th {
 </head>
 <body>
 
-<nav>Velkovix GPA & CGPA Manager</nav>
+<nav>Velkovix Quick GPA & CGPA Manager</nav>
 <main id="app" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <button onclick="addSemester()">➕ Add Semester</button>
-        <a href="quick-gpa.html" style="text-decoration:none; background:#10b981; color:white; padding:8px 14px; border-radius:6px; font-weight:bold;">
-         Use Credit Hours and Grade Points
+        <a href="index.html" style="text-decoration:none; background:#3b82f6; color:white; padding:8px 14px; border-radius:6px; font-weight:bold;">
+            Back to Home
         </a>
     </div>
     <div id="semesters"></div>
@@ -151,11 +139,6 @@ th {
 
 <div id="authScreen" style="padding:20px; max-width:400px; margin:120px auto; text-align:center;">
     <h1>🔐 Secure Access</h1>
-    <div id="setupPassword" class="hidden">
-        <p>Set your new password:</p>
-        <input type="password" id="newPass" placeholder="Enter password"><br>
-        <button onclick="saveNewPassword()">Save Password</button>
-    </div>
     <div id="loginPassword" class="hidden">
         <p>Enter your password:</p>
         <input type="password" id="loginPass" placeholder="Enter password"><br>
@@ -163,37 +146,24 @@ th {
     </div>
 </div>
 
-<!-- CryptoJS for encryption -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-
 <script>
 let semesters = [];
 let passwordKey = "";
 let passwordHash = localStorage.getItem("velkovixPassHash");
 
+// ----- Hash function -----
 function sha256(msg) {
     return CryptoJS.SHA256(msg).toString();
 }
 
-// ----- Authentication -----
+// ----- Auth -----
 function showAuthScreen() {
-    document.getElementById("authScreen").classList.remove("hidden");
     if (!passwordHash) {
-        document.getElementById("setupPassword").classList.remove("hidden");
+        alert("No password set. Please set it in the main app first.");
     } else {
         document.getElementById("loginPassword").classList.remove("hidden");
     }
-}
-
-function saveNewPassword() {
-    let pass = document.getElementById("newPass").value;
-    if (pass.length < 4) return alert("Password must be at least 4 characters");
-    passwordKey = pass;
-    passwordHash = sha256(pass);
-    localStorage.setItem("velkovixPassHash", passwordHash);
-    semesters = [];
-    saveData();
-    unlockApp();
 }
 
 function login() {
@@ -213,52 +183,49 @@ function unlockApp() {
     renderSemesters();
 }
 
-// ----- Data Encryption -----
+// ----- Data -----
 function saveData() {
     let encrypted = CryptoJS.AES.encrypt(JSON.stringify(semesters), passwordKey).toString();
-    localStorage.setItem("velkovixData", encrypted);
+    localStorage.setItem("velkovixQuickData", encrypted);
 }
 
 function loadData() {
-    let encrypted = localStorage.getItem("velkovixData");
+    let encrypted = localStorage.getItem("velkovixQuickData");
     if (!encrypted) return;
     try {
         let decrypted = CryptoJS.AES.decrypt(encrypted, passwordKey).toString(CryptoJS.enc.Utf8);
         semesters = JSON.parse(decrypted) || [];
     } catch (e) {
-        alert("Error decrypting data. Wrong password?");
+        alert("Error decrypting data.");
     }
 }
 
-// ----- GPA Functions -----
-function gradeToPoint(grade) {
-    const mapping = { "A": 4, "B+": 3.5, "B": 3, "C+": 2.5, "C": 2, "D+": 1.5, "D": 1, "F": 0 };
-    return mapping[grade] || 0;
-}
-
-function calculateGPA(courses) {
-    let totalCredits = 0, totalPoints = 0;
-    courses.forEach(c => {
-        totalCredits += c.credit;
-        totalPoints += c.gradePoints;
-    });
-    return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+// ----- GPA -----
+function calculateGPA(credit, points) {
+    return credit > 0 ? (points / credit) : 0;
 }
 
 function calculateOverallCgpa() {
     let totalCredits = 0, totalPoints = 0;
     semesters.forEach(sem => {
-        sem.courses.forEach(c => {
-            totalCredits += c.credit;
-            totalPoints += c.gradePoints;
-        });
+        totalCredits += sem.credit;
+        totalPoints += sem.points;
     });
     return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
 }
 
-// ----- UI Actions -----
+function getCumulativeCgpaUpTo(index) {
+    let totalCredits = 0, totalPoints = 0;
+    for (let i = 0; i <= index; i++) {
+        totalCredits += semesters[i].credit;
+        totalPoints += semesters[i].points;
+    }
+    return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+}
+
+// ----- UI -----
 function addSemester() {
-    semesters.push({ courses: [] });
+    semesters.push({ credit: 0, points: 0 });
     saveData();
     renderSemesters();
 }
@@ -271,22 +238,10 @@ function deleteSemester(index) {
     }
 }
 
-function addCourse(semIndex) {
-    let courseName = document.getElementById(`course-${semIndex}`).value.trim();
-    let credit = parseFloat(document.getElementById(`credit-${semIndex}`).value);
-    let grade = document.getElementById(`grade-${semIndex}`).value;
-    if (!courseName || isNaN(credit) || credit <= 0 || grade === "") {
-        return alert("Please fill all fields");
-    }
-    let gradeValue = gradeToPoint(grade);
-    let gradePoints = credit * gradeValue;
-    semesters[semIndex].courses.push({ courseName, credit, grade, gradePoints });
-    saveData();
-    renderSemesters();
-}
-
-function deleteCourse(semIndex, courseIndex) {
-    semesters[semIndex].courses.splice(courseIndex, 1);
+function updateSemester(index) {
+    let credit = parseFloat(document.getElementById(`credit-${index}`).value) || 0;
+    let points = parseFloat(document.getElementById(`points-${index}`).value) || 0;
+    semesters[index] = { credit, points };
     saveData();
     renderSemesters();
 }
@@ -294,73 +249,28 @@ function deleteCourse(semIndex, courseIndex) {
 function renderSemesters() {
     let container = document.getElementById("semesters");
     container.innerHTML = "";
-
-    semesters.forEach((sem, semIndex) => {
-        let gpa = calculateGPA(sem.courses).toFixed(2);
-
-        // Calculate CGPA up to this semester
-        let totalCredits = 0, totalPoints = 0;
-        for (let i = 0; i <= semIndex; i++) {
-            semesters[i].courses.forEach(c => {
-                totalCredits += c.credit;
-                totalPoints += c.gradePoints;
-            });
-        }
-        let cgpaUpToNow = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
-
+    semesters.forEach((sem, i) => {
+        let gpa = calculateGPA(sem.credit, sem.points).toFixed(2);
+        let cgpaUpToNow = getCumulativeCgpaUpTo(i).toFixed(2);
         let semDiv = document.createElement("div");
         semDiv.className = "semester";
         semDiv.innerHTML = `
             <div class="semester-header">
-                <h2 style="flex:1; text-align:center;">Semester ${semIndex + 1} — GPA: ${gpa}, CGPA: ${cgpaUpToNow}</h2>
-                <button onclick="deleteSemester(${semIndex})">🗑 Delete Semester</button>
+                <h2>Semester ${i + 1} GPA: ${gpa} | CGPA up to now: ${cgpaUpToNow}</h2>
+                <button onclick="deleteSemester(${i})">🗑 Delete</button>
             </div>
-            <div style="text-align:center;">
-                <input id="course-${semIndex}" placeholder="Course Name">
-                <input id="credit-${semIndex}" type="number" step="0.5" min="0" placeholder="Credit Hours">
-                <select id="grade-${semIndex}">
-                    <option value="">Select Grade</option>
-                    <option value="A">A (4.0)</option>
-                    <option value="B+">B+ (3.5)</option>
-                    <option value="B">B (3.0)</option>
-                    <option value="C+">C+ (2.5)</option>
-                    <option value="C">C (2.0)</option>
-                    <option value="D+">D+ (1.5)</option>
-                    <option value="D">D (1.0)</option>
-                    <option value="F">F (0.0)</option>
-                </select>
-                <button onclick="addCourse(${semIndex})">Add Course</button>
+            <div>
+                <input id="credit-${i}" type="number" step="0.5" min="0" placeholder="Total Credit Hours" value="${sem.credit}">
+                <input id="points-${i}" type="number" step="0.01" min="0" placeholder="Total Grade Points" value="${sem.points}">
+                <button onclick="updateSemester(${i})">Update</button>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Course</th>
-                        <th>Credit</th>
-                        <th>Grade</th>
-                        <th>Grade Points</th>
-                        <th>Delete</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${sem.courses.map((c, i) => `
-                        <tr>
-                            <td>${c.courseName}</td>
-                            <td>${c.credit}</td>
-                            <td>${c.grade}</td>
-                            <td>${c.gradePoints.toFixed(2)}</td>
-                            <td><span class="delete-btn" onclick="deleteCourse(${semIndex}, ${i})">X</span></td>
-                        </tr>
-                    `).join("")}
-                </tbody>
-            </table>
         `;
         container.appendChild(semDiv);
     });
-
     document.getElementById("overallCgpa").textContent = calculateOverallCgpa().toFixed(2);
 }
 
-// ----- Init -----
+// Init
 showAuthScreen();
 
 // ----- Register Service Worker -----
@@ -370,5 +280,6 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error("Service Worker registration failed:", err));
 }
 </script>
+
 </body>
 </html>
