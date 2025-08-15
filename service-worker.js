@@ -1,9 +1,9 @@
-const CACHE_NAME = "velkovix-gpa-cache-v1";
+const CACHE_NAME = "velkovix-gpa-cache-v2";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
+  "./quick.html", // ✅ Added Quick GPA page
   "./manifest.json",
-  "./service-worker.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"
